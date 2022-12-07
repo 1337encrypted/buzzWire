@@ -64,7 +64,7 @@ void led::toggle()
 {
   static unsigned long ledMillis = millis();    //Assigns the current snapshot of time only the first
                                               //time this code executes
-  if(millis() - ledMillis > 700)
+  if(millis() - ledMillis > 500)
   {
     digitalWrite(ledPin, !digitalRead(ledPin));
     ledMillis = millis();  

@@ -24,9 +24,15 @@ void loop() {
     goLed.on();
     stopLed.off();
     //You can put a interrupt here and leave the infinite loop on
-    if(wire.touched())
-      status = states::TOUCHED;
-    break;
+    while(true)
+    {
+      debugln("GO loop");
+      if(wire.touched())
+      {
+//        status = states::TOUCHED;
+        break; 
+      }
+    }
 
     case states::TOUCHED:
     debugln("TOUCHED state");
@@ -48,6 +54,21 @@ void loop() {
     while(true)
     {
       gameover();
+      goLed.toggle();
+      stopLed.toggle();
+      delay(2000);
+//      status = states::RESET;
+      break;
     }
+
+    case states::RESET:
+    debugln("RESET state");
+    goLed.off();
+    stopLed.off();
+    status = states::GO;
+    failCounter = 0;
+    display.displayDigit(0);
+    buzz.initBuzzer();
+    break;
   }
 }

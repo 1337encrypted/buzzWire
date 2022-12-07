@@ -1,5 +1,5 @@
 #include "_74HC595.h"
-#include "nervousMeter.h"
+#include "buzzWire.h"
 #include "BUZZER.h"
 #include "LED.h"
 
@@ -25,7 +25,7 @@ uint8_t dataPin = 4;
 _74HC595 display(latchPin, clockPin, dataPin);
 
 //BUZZER
-uint8_t buzzPin = 8;
+uint8_t buzzPin = 9;
 buzzer buzz(buzzPin);
 
 //GO LED
@@ -38,14 +38,15 @@ led stopLed(stopLedPin);
 
 //TOUCH STRING
 uint8_t touchPin = 10;
-nervousMeter wire(touchPin);
+buzzWire wire(touchPin);
 
 //STATES
 enum class states : uint8_t
 {
   GO,
   TOUCHED,
-  STOP
+  STOP,
+  RESET
 };
 states status = states::GO;
 
