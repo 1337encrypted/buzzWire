@@ -1,59 +1,79 @@
-#ifndef _74HC595_H
-#define _74HC595_H
-
-#if (ARDUINO >= 100)
-    #include "Arduino.h"
-#else
-    #include "WProgram.h"
-#endif
+#pragma once
 
 class _74HC595
 {
   private:
-  uint8_t latchPin;      // ST_CP [RCK] on 74HC595
-  uint8_t clockPin;      // SH_CP [SCK] on 74HC595
-  uint8_t dataPin;       // DS [S1] on 74HC595
+  int8_t dataPin;       // DS [S1] on 74HC595
+  int8_t clockPin;      // SH_CP [SCK] on 74HC595
+  int8_t latchPin;      // ST_CP [RCK] on 74HC595
   
-  byte seg_digits[10] = 
-  { 
-    B10000001,  // = 0
-    B11001111,  // = 1
-    B10010010,  // = 2
-    B10000110,  // = 3
-    B11001100,  // = 4
-    B10100100,  // = 5
-    B10100000,  // = 6
-    B10001111,  // = 7
-    B10000000,  // = 8
-    B10000100   // = 9
+  uint8_t digits[10] = {
+    0b00111111, //0
+    0b00000110, //1 
+    0b01011011, //2
+    0b01001111, //3 
+    0b01100110, //4
+    0b01101101, //5
+    0b01111101, //6
+    0b00000111, //7
+    0b01111111, //8
+    0b01101111  //9
   };
 
   public:
-  inline _74HC595(uint8_t&,uint8_t&,uint8_t&) __attribute__((always_inline));;
-  inline void begin() __attribute__((always_inline));;
-  inline void displayDigit(int) __attribute__((always_inline));;
+  inline _74HC595(int8_t&, int8_t&, int8_t&) __attribute__((always_inline));
+  inline void begin() __attribute__((always_inline));
+  inline void shiftOut(uint8_t) __attribute__((always_inline));
+  inline void displayDigit(uint) __attribute__((always_inline));
+  inline void counter() __attribute__((always_inline));
 };
 
-_74HC595::_74HC595(uint8_t& latchPin, uint8_t& clockPin, uint8_t& dataPin)
+_74HC595::_74HC595(int8_t& dataPin, int8_t& clockPin, int8_t& latchPin)
 {
-  this->latchPin = latchPin;
-  this->clockPin = clockPin;
   this->dataPin = dataPin;
+  this->clockPin = clockPin;
+  this->latchPin = latchPin;
 }
 
 void _74HC595::begin()
 {
-  pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);  
   pinMode(clockPin, OUTPUT);
-  displayDigit(0);
+  pinMode(latchPin, OUTPUT);
+  displayDigit(00);
 }
 
-void _74HC595::displayDigit(int x)
+void _74HC595::shiftOut(uint8_t value) {
+  for (uint8_t i = 0; i < 8; ++i) {
+    // Extract the bit to send based on the bit order
+    bool bitToSend = (value >> (7 - i)) & 0x01;
+
+    // Send the bit out
+    digitalWrite(dataPin, bitToSend);
+    digitalWrite(clockPin, HIGH);
+    digitalWrite(clockPin, LOW);
+  }
+}
+
+void _74HC595::displayDigit(uint8_t number)
 {
-   digitalWrite(latchPin, LOW);
-   shiftOut(dataPin, clockPin, LSBFIRST, seg_digits[x]);
-   digitalWrite(latchPin, HIGH);
+  shiftOut(digits[number%10]);
+  shiftOut(digits[number/10]);
+  
+  digitalWrite(latchPin, HIGH); 
+  digitalWrite(latchPin, LOW);
 }
 
-#endif _74HC595_H
+bool _74HC595::counter() {
+  static int8_t number = 0;
+  static unsigned long prevousTime = millis();
+  if(millis() - prevousTime > 1000)
+  {
+    displayDigit(number++);
+    prevousTime = millis(); 
+
+    if(number == 100)
+      return false; 
+  }
+  return true;
+}

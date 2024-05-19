@@ -2,73 +2,64 @@
 
 void setup() 
 {
-  // put your setup code here, to run once:
-  SerialBegin(9600);       //Serial.begin(9600);
-  display.begin();
-  goLed.begin();
-  stopLed.begin();
-  buzz.begin();
-  wire.begin();
+  bleSerial.Begin(9600);
 
-  buzz.initBuzzer();
-  goLed.off();
-  stopLed.off();
+  pinMode(buzzWirePin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(buzzWirePin), touched, FALLING);
+
+  bleSerial.println("\nPress S to start\nX to STOP\nand R to reset");
 }
 
+void touched() {
+
+  uint32_t currentTime = millis()
+
+  if ((currentTime - lastDebounceTime) > 20) {
+    lastDebounceTime = currentTime;
+    status = TOUCH;
+  }
+}
+
+
 void loop() {
-  // put your main code here, to run repeatedly:
+
+  if(bleSerial.available() > 0){
+    status = (states)bleSerial.read();
+  }
+
   switch(status)
   {
-    case states::GO:
-    debugln("GO state");
-    goLed.on();
-    stopLed.off();
-    //You can put a interrupt here and leave the infinite loop on
-    while(true)
-    {
-      debugln("GO loop");
-      if(wire.touched())
-      {
-//        status = states::TOUCHED;
-        break; 
-      }
-    }
+    case START:
+    break;
 
-    case states::TOUCHED:
-    debugln("TOUCHED state");
-    display.displayDigit(++failCounter);
-    buzz.alarm();
-    goLed.off();
-    status = states::GO;
-    
-    if(failCounter > fail_threshold)
-    {
-      status = states::STOP;
-    }    
+    case PAUSE:
+
+    case RELEASED:
+    buzz.off();
+
+    if(!display.counter)
+      status = GAMEOVER;
+    break; 
+
+    case TOUCHED:
+    buzz.on();
+
+    if(lives)
+      leds[lives--].on();
+    else
+      status = GAMEOVER;
     break;
     
-    case states::STOP:
-    debugln("STOP state");
-    goLed.off();
-    stopLed.on();
-    while(true)
-    {
-      gameover();
-      goLed.toggle();
-      stopLed.toggle();
-      delay(2000);
-//      status = states::RESET;
-      break;
-    }
+    case GAMEOVER:
+    buzz.alarm();
+    break;
 
-    case states::RESET:
-    debugln("RESET state");
-    goLed.off();
-    stopLed.off();
-    status = states::GO;
-    failCounter = 0;
-    display.displayDigit(0);
-    buzz.initBuzzer();
+    case RESET:
+    lives = 0;
+
+    for (int i = 0; i < lives; ++i) {
+      leds[i].off();
+    }
     break;
   }
 }
